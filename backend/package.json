@@ -1,0 +1,40 @@
+{
+  "name": "lifeos-backend",
+  "version": "0.1.0",
+  "description": "LifeOS — personal life management system backend",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "nodemon src/app.js",
+    "start": "node src/app.js",
+    "prisma:generate": "node_modules\\.bin\\prisma.CMD generate",
+    "prisma:migrate": "node_modules\\.bin\\prisma.CMD migrate dev",
+    "prisma:studio": "node_modules\\.bin\\prisma.CMD studio",
+    "db:push": "node_modules\\.bin\\prisma.CMD db push"
+  },
+  "keywords": [
+    "lifeos",
+    "health",
+    "finance",
+    "habits"
+  ],
+  "author": "Alexander Tejeda",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "pg": "^8.22.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^7.8.0"
+  }
+}
