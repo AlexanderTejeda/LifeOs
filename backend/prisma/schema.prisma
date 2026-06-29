@@ -17,13 +17,15 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  accounts     Account[]
-  transactions Transaction[]
-  budgets      Budget[]
-  bodyMetrics  BodyMetric[]
-  habits       Habit[]
-  habitLogs    HabitLog[]
-  healthLogs   HealthLog[]
+  accounts           Account[]
+  transactions       Transaction[]
+  budgets            Budget[]
+  bodyMetrics        BodyMetric[]
+  habits             Habit[]
+  habitLogs          HabitLog[]
+  healthLogs         HealthLog[]
+  activityCategories ActivityCategory[]
+  activities         Activity[]
 
   @@map("users")
 }
@@ -192,6 +194,59 @@ model HabitLog {
   @@unique([habitId, date])
   @@index([userId, date])
   @@map("habit_logs")
+}
+
+// ─── ACTIVITIES ──────────────────────────────────────────────────────────────
+
+model ActivityCategory {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  color     String?
+  icon      String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities Activity[]
+
+  @@index([userId])
+  @@map("activity_categories")
+}
+
+model Activity {
+  id          String         @id @default(cuid())
+  userId      String
+  categoryId  String?
+  title       String
+  description String?
+  startDate   DateTime       @db.Date
+  endDate     DateTime       @db.Date
+  status      ActivityStatus @default(PENDING)
+  priority    Priority       @default(MEDIUM)
+  completedAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ActivityCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startDate])
+  @@map("activities")
+}
+
+enum ActivityStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
 }
 
 // ─── HEALTH ──────────────────────────────────────────────────────────────────

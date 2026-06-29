@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-// Capped at 72: bcrypt silently truncates input beyond 72 bytes.
 const password = z
   .string()
   .min(8, 'Password must be at least 8 characters')

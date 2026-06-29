@@ -7,6 +7,7 @@ import morgan from 'morgan'
 import { errorHandler } from './shared/middlewares/errorHandler.js'
 import { globalLimiter } from './shared/middlewares/rateLimit.js'
 import authRouter from './modules/auth/auth.routes.js'
+import activitiesRouter from './modules/activities/activities.routes.js'
 
 const app = express()
 const PORT = process.env.PORT ?? 3000
@@ -25,6 +26,7 @@ app.use('/api', globalLimiter)
 
 // Modules — will be added as each is built
 app.use('/api/auth', authRouter)
+app.use('/api/activities', activitiesRouter)
 // app.use('/api/finance', financeRouter)
 // app.use('/api/body', bodyRouter)
 // app.use('/api/habits', habitsRouter)

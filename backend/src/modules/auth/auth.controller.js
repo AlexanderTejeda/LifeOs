@@ -1,7 +1,6 @@
 import * as authService from './auth.service.js'
 import { ok, created } from '../../shared/utils/response.js'
 
-// Express 5 forwards rejected promises to the error handler automatically.
 export const register = async (req, res) => {
   const result = await authService.register(req.body)
   created(res, result)
