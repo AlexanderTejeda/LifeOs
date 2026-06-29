@@ -4,6 +4,15 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## 0. Context Discipline
+
+**Don't drift. Don't forget your own constraints.**
+
+- Before each response in a long conversation, briefly scan this file again.
+- If the user's request was made more than 5 exchanges ago, restate your understanding before acting.
+- If the conversation has shifted topics significantly, ask: "Are we still working on [original task], or has this changed?"
+- When you return to a task after discussing other things, summarize: "To confirm, I'm now working on [X]. Is that correct?"
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
@@ -42,6 +51,8 @@ When your changes create orphans:
 
 The test: Every changed line should trace directly to the user's request.
 
+**Example of surgical vs. non-surgical:**
+
 ## 4. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
@@ -61,5 +72,19 @@ For multi-step tasks, state a brief plan:
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ---
+
+## 5. Stop & Ask
+
+**Know when to pause. Don't guess your way through.**
+
+Stop and ask clarifying questions when:
+
+- You don't understand the business domain or problem context.
+- The requested change could have non-obvious side effects (e.g., changing a shared utility, modifying auth logic).
+- The user asks for something that violates security, performance, or maintainability best practices.
+- You're uncertain about which of two approaches is correct, and picking wrong would be costly.
+
+When you stop, name exactly what's unclear:
+
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
