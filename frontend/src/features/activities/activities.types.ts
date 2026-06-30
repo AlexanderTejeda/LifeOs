@@ -1,7 +1,7 @@
 export type ActivityStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE'
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH'
 
-export interface Category {
+export interface Project {
   id: string
   name: string
   color: string | null
@@ -10,10 +10,11 @@ export interface Category {
   createdAt: string
 }
 
+export type ProjectRef = Pick<Project, 'id' | 'name' | 'color' | 'icon'>
+
 export interface Activity {
   id: string
   userId: string
-  categoryId: string | null
   title: string
   description: string | null
   startDate: string
@@ -23,18 +24,18 @@ export interface Activity {
   completedAt: string | null
   createdAt: string
   updatedAt: string
-  category?: Pick<Category, 'id' | 'name' | 'color' | 'icon'> | null
+  projects: ProjectRef[]
 }
 
 export interface ActivityFilters {
   date?: string
   from?: string
   to?: string
-  categoryId?: string
+  projectId?: string
   status?: ActivityStatus
 }
 
-export interface CategoryInput {
+export interface ProjectInput {
   name: string
   color?: string
 }
@@ -46,5 +47,5 @@ export interface ActivityInput {
   endDate?: string
   status?: ActivityStatus
   priority?: Priority
-  categoryId?: string | null
+  projectIds?: string[]
 }

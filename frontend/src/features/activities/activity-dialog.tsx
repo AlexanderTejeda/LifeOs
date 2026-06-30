@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -25,10 +25,10 @@ import { apiMessage } from '@/lib/api-client'
 import { toISODate } from '@/lib/date'
 import { activitySchema, type ActivityValues } from './activities.schema'
 import { PRIORITY_META, STATUS_META } from './activities.constants'
-import { useActivityMutations, useCategories } from './activities.queries'
+import { useActivityMutations } from './activities.queries'
+import { ProjectMultiSelect } from './project-multi-select'
+import { ProjectDialog } from './project-dialog'
 import type { Activity, Priority, ActivityStatus } from './activities.types'
-
-const NO_CATEGORY = 'none'
 
 interface ActivityDialogProps {
   open: boolean
@@ -38,24 +38,18 @@ interface ActivityDialogProps {
 }
 
 export function ActivityDialog({ open, onOpenChange, activity, defaultDate }: ActivityDialogProps) {
-  const { data: categories = [] } = useCategories()
   const { create, update } = useActivityMutations()
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false)
   const isEdit = !!activity
 
-  const { register, handleSubmit, reset, control, formState } = useForm<ActivityValues>({
-    resolver: zodResolver(activitySchema),
-  })
+  const { register, handleSubmit, reset, control, watch, setValue, formState } =
+    useForm<ActivityValues>({ resolver: zodResolver(activitySchema) })
 
   const priorityItems = Object.fromEntries(
     Object.entries(PRIORITY_META).map(([k, v]) => [k, v.label]),
   )
-  const statusItems = Object.fromEntries(
-    Object.entries(STATUS_META).map(([k, v]) => [k, v.label]),
-  )
-  const categoryItems = {
-    [NO_CATEGORY]: 'Sin rubro',
-    ...Object.fromEntries(categories.map((c) => [c.id, c.name])),
-  }
+  const statusItems = Object.fromEntries(Object.entries(STATUS_META).map(([k, v]) => [k, v.label]))
+  const projectIds = watch('projectIds') ?? []
 
   useEffect(() => {
     if (open) {
@@ -66,17 +60,13 @@ export function ActivityDialog({ open, onOpenChange, activity, defaultDate }: Ac
         endDate: activity ? toISODate(activity.endDate) : defaultDate,
         priority: activity?.priority ?? 'MEDIUM',
         status: activity?.status ?? 'PENDING',
-        categoryId: activity?.categoryId ?? NO_CATEGORY,
+        projectIds: activity?.projects.map((p) => p.id) ?? [],
       })
     }
   }, [open, activity, defaultDate, reset])
 
   const onSubmit = async (values: ActivityValues) => {
-    const input = {
-      ...values,
-      description: values.description?.trim() || null,
-      categoryId: values.categoryId === NO_CATEGORY ? null : values.categoryId,
-    }
+    const input = { ...values, description: values.description?.trim() || null }
     try {
       if (isEdit) await update.mutateAsync({ id: activity.id, input })
       else await create.mutateAsync(input)
@@ -88,116 +78,117 @@ export function ActivityDialog({ open, onOpenChange, activity, defaultDate }: Ac
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <DialogHeader>
-            <DialogTitle>{isEdit ? 'Editar actividad' : 'Nueva actividad'}</DialogTitle>
-            <DialogDescription>¿Qué tienes pendiente para este día?</DialogDescription>
-          </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+            <DialogHeader>
+              <DialogTitle>{isEdit ? 'Editar actividad' : 'Nueva actividad'}</DialogTitle>
+              <DialogDescription>¿Qué tienes pendiente para este día?</DialogDescription>
+            </DialogHeader>
 
-          <div className="grid gap-2">
-            <Label htmlFor="act-title">Título</Label>
-            <Input id="act-title" placeholder="Llamada con el cliente" {...register('title')} />
-            {formState.errors.title && (
-              <p className="text-sm text-destructive">{formState.errors.title.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="act-desc">Notas (opcional)</Label>
-            <Textarea id="act-desc" rows={2} {...register('description')} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
-              <Label htmlFor="act-start">Inicio</Label>
-              <Input id="act-start" type="date" {...register('startDate')} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="act-end">Fin</Label>
-              <Input id="act-end" type="date" {...register('endDate')} />
-              {formState.errors.endDate && (
-                <p className="text-sm text-destructive">{formState.errors.endDate.message}</p>
+              <Label htmlFor="act-title">Título</Label>
+              <Input id="act-title" placeholder="Llamada con el cliente" {...register('title')} />
+              {formState.errors.title && (
+                <p className="text-sm text-destructive">{formState.errors.title.message}</p>
               )}
             </div>
-          </div>
 
-          <div className="grid gap-2">
-            <Label>Rubro</Label>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field }) => (
-                <Select items={categoryItems} value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_CATEGORY}>Sin rubro</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
-              <Label>Prioridad</Label>
+              <Label htmlFor="act-desc">Notas (opcional)</Label>
+              <Textarea id="act-desc" rows={2} {...register('description')} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Proyectos</Label>
               <Controller
                 control={control}
-                name="priority"
+                name="projectIds"
                 render={({ field }) => (
-                  <Select items={priorityItems} value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(PRIORITY_META) as Priority[]).map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {PRIORITY_META[p].label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ProjectMultiSelect
+                    value={field.value ?? []}
+                    onChange={field.onChange}
+                    onCreateProject={() => setProjectDialogOpen(true)}
+                  />
                 )}
               />
             </div>
-            <div className="grid gap-2">
-              <Label>Estado</Label>
-              <Controller
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <Select items={statusItems} value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(STATUS_META) as ActivityStatus[]).map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {STATUS_META[s].label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          </div>
 
-          <DialogFooter>
-            <Button type="submit" disabled={formState.isSubmitting}>
-              {isEdit ? 'Guardar' : 'Crear actividad'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="act-start">Inicio</Label>
+                <Input id="act-start" type="date" {...register('startDate')} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="act-end">Fin</Label>
+                <Input id="act-end" type="date" {...register('endDate')} />
+                {formState.errors.endDate && (
+                  <p className="text-sm text-destructive">{formState.errors.endDate.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label>Prioridad</Label>
+                <Controller
+                  control={control}
+                  name="priority"
+                  render={({ field }) => (
+                    <Select items={priorityItems} value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(PRIORITY_META) as Priority[]).map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {PRIORITY_META[p].label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Estado</Label>
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <Select items={statusItems} value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(STATUS_META) as ActivityStatus[]).map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {STATUS_META[s].label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="submit" disabled={formState.isSubmitting}>
+                {isEdit ? 'Guardar' : 'Crear actividad'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create a project without leaving the task modal; auto-select it. */}
+      <ProjectDialog
+        open={projectDialogOpen}
+        onOpenChange={setProjectDialogOpen}
+        onCreated={(project) => setValue('projectIds', [...projectIds, project.id])}
+      />
+    </>
   )
 }

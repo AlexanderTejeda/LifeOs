@@ -17,10 +17,11 @@ import type { Activity } from './activities.types'
 
 interface ActivityItemProps {
   activity: Activity
+  onOpen: (activity: Activity) => void
   onEdit: (activity: Activity) => void
 }
 
-export function ActivityItem({ activity, onEdit }: ActivityItemProps) {
+export function ActivityItem({ activity, onOpen, onEdit }: ActivityItemProps) {
   const { update, remove } = useActivityMutations()
   const isDone = activity.status === 'DONE'
   const isMultiDay = toISODate(activity.startDate) !== toISODate(activity.endDate)
@@ -41,20 +42,22 @@ export function ActivityItem({ activity, onEdit }: ActivityItemProps) {
     <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/40">
       <Checkbox checked={isDone} onCheckedChange={toggle} className="size-5" />
 
-      <div className="min-w-0 flex-1">
+      {/* Body opens the full task view */}
+      <button
+        type="button"
+        onClick={() => onOpen(activity)}
+        className="min-w-0 flex-1 text-left"
+      >
         <p className={cn('truncate text-sm font-medium', isDone && 'text-muted-foreground line-through')}>
           {activity.title}
         </p>
-        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          {activity.category && (
-            <span className="flex items-center gap-1.5">
-              <span
-                className="size-2 rounded-full"
-                style={{ backgroundColor: activity.category.color ?? '#71717a' }}
-              />
-              {activity.category.name}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          {activity.projects.map((p) => (
+            <span key={p.id} className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full" style={{ backgroundColor: p.color ?? '#71717a' }} />
+              {p.name}
             </span>
-          )}
+          ))}
           {isMultiDay && (
             <span className="flex items-center gap-1">
               <CalendarRange className="size-3" />
@@ -63,7 +66,7 @@ export function ActivityItem({ activity, onEdit }: ActivityItemProps) {
           )}
           {activity.status === 'IN_PROGRESS' && <span>· {STATUS_META.IN_PROGRESS.label}</span>}
         </div>
-      </div>
+      </button>
 
       <Badge variant="outline" className={PRIORITY_META[activity.priority].className}>
         {PRIORITY_META[activity.priority].label}

@@ -47,7 +47,24 @@ export default function DashboardPage() {
       return { day: formatWeekday(day), completadas: d, restantes: dayTasks.length - d }
     })
 
-    return { done, inProgress, pending, total, pct, week }
+    // Breakdown by project across the week. A task counts for each of its projects.
+    const projectMap = new Map<
+      string,
+      { id: string; name: string; color: string | null; done: number; total: number }
+    >()
+    for (const a of activities) {
+      for (const p of a.projects) {
+        const entry = projectMap.get(p.id) ?? { id: p.id, name: p.name, color: p.color, done: 0, total: 0 }
+        entry.total += 1
+        if (a.status === 'DONE') entry.done += 1
+        projectMap.set(p.id, entry)
+      }
+    }
+    const byProject = [...projectMap.values()].sort(
+      (a, b) => b.total - a.total || b.done - a.done,
+    )
+
+    return { done, inProgress, pending, total, pct, week, byProject }
   }, [activities, today])
 
   const donutData = [
@@ -132,6 +149,41 @@ export default function DashboardPage() {
               <Bar dataKey="restantes" stackId="a" fill="var(--color-restantes)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Breakdown by project */}
+      <Card className="mt-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Por proyecto</CardTitle>
+          <CardDescription>Avance de cada proyecto en los próximos 7 días</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.byProject.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Sin tareas con proyecto esta semana.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {stats.byProject.map((p) => {
+                const pct = p.total ? Math.round((p.done / p.total) * 100) : 0
+                return (
+                  <div key={p.id} className="flex items-center gap-3">
+                    <span className="flex w-28 shrink-0 items-center gap-2 text-sm">
+                      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: p.color ?? '#71717a' }} />
+                      <span className="truncate">{p.name}</span>
+                    </span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                      <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                      {p.done}/{p.total}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

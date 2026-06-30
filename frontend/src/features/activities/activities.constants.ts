@@ -12,8 +12,8 @@ export const STATUS_META: Record<ActivityStatus, { label: string }> = {
   DONE: { label: 'Hecho' },
 }
 
-// Preset swatches for new rubros — keeps colors consistent without a full picker.
-export const CATEGORY_COLORS = [
+// Preset swatches for new projects — keeps colors consistent without a full picker.
+export const PROJECT_COLORS = [
   '#3b82f6',
   '#8b5cf6',
   '#ec4899',

@@ -24,7 +24,7 @@ model User {
   habits             Habit[]
   habitLogs          HabitLog[]
   healthLogs         HealthLog[]
-  activityCategories ActivityCategory[]
+  projects           Project[]
   activities         Activity[]
 
   @@map("users")
@@ -198,7 +198,7 @@ model HabitLog {
 
 // ─── ACTIVITIES ──────────────────────────────────────────────────────────────
 
-model ActivityCategory {
+model Project {
   id        String    @id @default(cuid())
   userId    String
   name      String
@@ -208,17 +208,16 @@ model ActivityCategory {
   createdAt DateTime  @default(now())
   deletedAt DateTime?
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activities Activity[]
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities ActivityProject[]
 
   @@index([userId])
-  @@map("activity_categories")
+  @@map("projects")
 }
 
 model Activity {
   id          String         @id @default(cuid())
   userId      String
-  categoryId  String?
   title       String
   description String?
   startDate   DateTime       @db.Date
@@ -231,10 +230,23 @@ model Activity {
   updatedAt   DateTime       @updatedAt
 
   user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category ActivityCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  projects ActivityProject[]
 
   @@index([userId, startDate])
   @@map("activities")
+}
+
+// Join table: a task can belong to many projects, a project to many tasks.
+model ActivityProject {
+  activityId String
+  projectId  String
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, projectId])
+  @@index([projectId])
+  @@map("activity_projects")
 }
 
 enum ActivityStatus {

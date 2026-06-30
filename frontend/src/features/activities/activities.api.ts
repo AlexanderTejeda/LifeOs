@@ -3,31 +3,36 @@ import type {
   Activity,
   ActivityFilters,
   ActivityInput,
-  Category,
-  CategoryInput,
+  Project,
+  ProjectInput,
 } from './activities.types'
 
-// ─── Categories (rubros) ───
-export const listCategories = async () => {
-  const { data } = await api.get<{ data: Category[] }>('/activities/categories')
+// ─── Projects ───
+export const listProjects = async () => {
+  const { data } = await api.get<{ data: Project[] }>('/activities/projects')
   return data.data
 }
 
-export const createCategory = async (input: CategoryInput) => {
-  const { data } = await api.post<{ data: Category }>('/activities/categories', input)
+export const createProject = async (input: ProjectInput) => {
+  const { data } = await api.post<{ data: Project }>('/activities/projects', input)
   return data.data
 }
 
-export const updateCategory = async (id: string, input: Partial<CategoryInput>) => {
-  const { data } = await api.patch<{ data: Category }>(`/activities/categories/${id}`, input)
+export const updateProject = async (id: string, input: Partial<ProjectInput>) => {
+  const { data } = await api.patch<{ data: Project }>(`/activities/projects/${id}`, input)
   return data.data
 }
 
-export const deleteCategory = (id: string) => api.delete(`/activities/categories/${id}`)
+export const deleteProject = (id: string) => api.delete(`/activities/projects/${id}`)
 
 // ─── Activities ───
 export const listActivities = async (filters: ActivityFilters = {}) => {
   const { data } = await api.get<{ data: Activity[] }>('/activities', { params: filters })
+  return data.data
+}
+
+export const getActivity = async (id: string) => {
+  const { data } = await api.get<{ data: Activity }>(`/activities/${id}`)
   return data.data
 }
 

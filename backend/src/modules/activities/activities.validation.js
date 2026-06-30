@@ -4,24 +4,29 @@ const STATUS = ['PENDING', 'IN_PROGRESS', 'DONE']
 const PRIORITY = ['LOW', 'MEDIUM', 'HIGH']
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a hex like #3b82f6')
+// Day-only date; converted to a UTC-midnight Date so the calendar day never shifts.
 const dateOnly = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD')
   .transform((s) => new Date(`${s}T00:00:00.000Z`))
 
-// ─── Categories ───
-export const createCategorySchema = z.object({
+const projectIds = z.array(z.string().cuid())
+
+// ─── Projects ───
+export const createProjectSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(60),
   color: hexColor.optional(),
   icon: z.string().trim().max(40).optional(),
 })
 
-export const updateCategorySchema = createCategorySchema
+export const updateProjectSchema = createProjectSchema
   .extend({ isActive: z.boolean() })
   .partial()
   .refine((d) => Object.keys(d).length > 0, 'At least one field is required')
 
 // ─── Activities ───
+// endDate is optional on create (defaults to startDate). When both dates are
+// present, the range must not be inverted.
 const endNotBeforeStart = (d) => !d.startDate || !d.endDate || d.endDate >= d.startDate
 const rangeError = { message: 'endDate must be on or after startDate', path: ['endDate'] }
 
@@ -33,7 +38,7 @@ export const createActivitySchema = z
     endDate: dateOnly.optional(),
     status: z.enum(STATUS).optional(),
     priority: z.enum(PRIORITY).optional(),
-    categoryId: z.string().cuid().nullish(),
+    projectIds: projectIds.optional(),
   })
   .refine(endNotBeforeStart, rangeError)
 
@@ -45,7 +50,7 @@ export const updateActivitySchema = z
     endDate: dateOnly,
     status: z.enum(STATUS),
     priority: z.enum(PRIORITY),
-    categoryId: z.string().cuid().nullable(),
+    projectIds,
   })
   .partial()
   .refine((d) => Object.keys(d).length > 0, 'At least one field is required')
@@ -56,7 +61,7 @@ export const listActivitiesSchema = z
     date: dateOnly.optional(),
     from: dateOnly.optional(),
     to: dateOnly.optional(),
-    categoryId: z.string().cuid().optional(),
+    projectId: z.string().cuid().optional(),
     status: z.enum(STATUS).optional(),
   })
   .partial()
